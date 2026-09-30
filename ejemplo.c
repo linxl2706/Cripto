@@ -2,21 +2,61 @@
 
 #include <stdlib.h>
 
+#include <string.h>
+
+#include <ctype.h>
+
 #include <gmp.h>
 
 /*#include "gmp.h"*/
 
-int euclides(int a, int b) {
+int *char_to_number(char c)
+{
+  int i;
+  int *num = malloc(strlen(c)*sizeof(int));
+  for(i = 0; i<strlen(c); i++)
+  {
+    if (c[i] >= 'A' && c[i] <= 'Z')
+      num[i] = c[i] - 'A';
+    else if (c[i] >= 'a' && c[i] <= 'z')
+      num[i] = c[i] - 'a';
+  }
+  return num;
+}
+
+int *number_to_char(int *num)
+{
+  int i;
+  char *c = malloc(strlen(num)*sizeof(char));
+  for(i = 0; i<strlen(num); i++)
+  {
+    if (num[i] >= 0 && num[i] <= 25)
+      c[i] = num[i] + 'A';
+    else if (num[i] >= 26 && num[i] <= 51)
+      c[i] = num[i] - 26 + 'a';
+    else
+      c[i] = ' ';
+  }
+  return c;
+}
+
+
+
+int euclides(int a, int b)
+{
   int r0 = a, r1 = b, q, r2;
-  if (a==0 && b==0) {
+  if (a == 0 && b == 0)
+  {
     return -1;
   }
-  if(b > a) {
+  if (b > a)
+  {
     r0 = b;
     r1 = a;
   }
   r2 = r0 % r1;
-  while(r2 != 0) {
+  while (r2 != 0)
+  {
     r0 = r1;
     r1 = r2;
     r2 = r0 % r1;
@@ -24,19 +64,21 @@ int euclides(int a, int b) {
   return r1;
 }
 
-int* euclide
-
-int euclides_extendido(int a, int b) {
+int euclides_extendido(int a, int b)
+{
   int r0 = a, r1 = b, q, r2;
-  if (a==0 && b==0) {
+  if (a == 0 && b == 0)
+  {
     return -1;
   }
-  if(b > a) {
+  if (b > a)
+  {
     r0 = b;
     r1 = a;
   }
   r2 = r0 % r1;
-  while(r2 != 0) {
+  while (r2 != 0)
+  {
     r0 = r1;
     r1 = r2;
     r2 = r0 % r1;
@@ -44,51 +86,109 @@ int euclides_extendido(int a, int b) {
   return r1;
 }
 
-
-
+int afin(int *num)
+{
+  int i;
+  for(i = 0; i<strlen(num); i++)
+  {
+    num[i] = (num[i] * a + b) % m;
+  }
+  return num;
+}
 /* PROGRAMA PRINCIPAL */
 
-int main (int argc,char *argv[]) {
+int main(int argc, char *argv[])
+{
 
-  mpz_t a,b,m;
+  mpz_t a, b, m;
 
   int modo;
 
-  FILE *entrada,*salida;
+  FILE *entrada = NULL, *salida = NULL;
 
+  int encode;
 
-  mpz_init (a);
+  char *code = NULL;
 
-  mpz_init (b);
+  mpz_init(a);
+  mpz_init(b);
+  mpz_init(m);
 
-  mpz_init (m);
+  for (int i = 1; i < argc; i++)
+  {
+    if (strcmp(argv[i], "-C") == 0)
+    {
+      encode = 0;
+    }
+    else if (strcmp(argv[i], "-D") == 0)
+    {
+      encode = 1;
+    }
+    else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc)
+    {
+      mpz_set_str(m, argv[i + 1], 10);
+      i++;
+    }
+    else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc)
+    {
+      mpz_set_str(a, argv[i + 1], 10);
+      i++;
+    }
+    else if (strcmp(argv[i], "-b") == 0 && i + 1 < argc)
+    {
+      mpz_set_str(b, argv[i + 1], 10);
+      i++;
+    }
+    else if (strcmp(argv[i], "-i") == 0 && i + 1 < argc)
+    {
+      entrada = fopen(argv[i + 1], "r");
+      if (!entrada)
+      {
+        fprintf(stderr, "Error al abrir el fichero de entrada\n");
+        return 1;
+      }
+      i++;
+    }
+    else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc)
+    {
+      salida = fopen(argv[i + 1], "w");
+      if (!salida)
+      {
+        fprintf(stderr, "Error al abrir el fichero de salida\n");
+        return 1;
+      }
+      i++;
+    }
+  }
 
+  code = malloc(strlen(a) * sizeof(char));
 
+  if (!encode)
+    if(euclides(a,m)==1){
+      for(int i = 0; i < strlen(a); i++)
+        code[i] = number_to_char(afin(char_to_number(a)));
+    }
+    fprintf(stderr, "No existe inverso multiplicativo\n");
+    
+  else{
+    for(int i = 0; i < strlen(a); i++){
+      code[i] = number_to_char(euclides_extendido(char_to_number(a), m));
+    }
+  }
+  
+  fprintf(salida, "%s\n", code);
 
-  mpz_set_str (a,"123452345234523452352352345112341234213",10);
+  mpz_clear(a);
 
-  mpz_set_str (b,"234562344341234123421341234441234213421",10);
+  mpz_clear(b);
 
+  mpz_clear(m);
 
+  if (entrada != stdin)
+    fclose(entrada);
 
-  mpz_add    (m,a,b);
+  if (salida != stdout)
+    fclose(salida);
 
-
-
-  gmp_printf ("El resultado de la suma es %Zd\n", m);
-
-
-
-  mpz_clear (a);
-
-  mpz_clear (b);
-
-  mpz_clear (m);
-
-  int s = euclides(8*4*23*34*2, 18*342*2*34*4);
-  printf("%d\n",s);
-
-  return(0);
-
+  return (0);
 }
-
