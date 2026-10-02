@@ -12,58 +12,58 @@
 
 #define TAM 4096
 
-int *char_to_number(char *c)
-{
-  int i;
-  int *num = malloc(strlen(c) * sizeof(int));
-  for (i = 0; i < strlen(c); i++)
-  {
-    if (c[i] >= 'A' && c[i] <= 'Z')
-      num[i] = c[i] - 'A';
-    else if (c[i] >= 'a' && c[i] <= 'z')
-      num[i] = c[i] - 'a';
-  }
-  return num;
+int char_to_number(int c) {
+    if (isupper(c)) return c - 'A';
+    if (islower(c)) return c - 'a';
+    return -1;
 }
 
-int *number_to_char(int *num)
-{
-  int i;
-  char *c = malloc(strlen(num) * sizeof(char));
-  for (i = 0; i < strlen(num); i++)
-  {
-    if (num[i] >= 0 && num[i] <= 25)
-      c[i] = num[i] + 'A';
-    else if (num[i] >= 26 && num[i] <= 51)
-      c[i] = num[i] - 26 + 'a';
-    else
-      c[i] = ' ';
-  }
-  return c;
+char number_to_char(int num) {
+    if (num >= 0 && num <= 25) return num + 'a';
+    return '\0';
 }
 
 int euclides(mpz_t a, mpz_t b)
 {
-  int r0 = a, r1 = b, q, r2;
-  if (a == 0 && b == 0)
+  int res;
+  mpz_t result, r0, r1, r2;
+
+  mpz_init_set(r0, a);
+  mpz_init_set(r1, b);
+  mpz_init(r2);
+
+  /*Comprobacion de valores*/
+  if (mpz_cmp_ui(a, 0) == 0 && mpz_cmp_ui(b, 0) == 0)
   {
+    mpz_clear(r0);
+    mpz_clear(r1);
+    mpz_clear(r2);
     return -1;
   }
-  if (b > a)
+
+  if (mpz_cmp(b, a) > 0)
   {
-    r0 = b;
-    r1 = a;
+    mpz_set(r0, b);
+    mpz_set(r1, a);
   }
-  r2 = r0 % r1;
-  while (r2 != 0)
+
+  mpz_mod(r2, r0, r1);
+  while (mpz_cmp_ui(r2, 0) != 0)
   {
-    r0 = r1;
-    r1 = r2;
-    r2 = r0 % r1;
+    mpz_set(r0, r1);     // r0 = r1
+    mpz_set(r1, r2);     // r1 = r2
+    mpz_mod(r2, r0, r1); // r2 = r0 % r1
   }
-  return r1;
+  res = mpz_get_si(r1);
+
+  mpz_clear(r0);
+  mpz_clear(r1);
+  mpz_clear(r2);
+
+  return res;
 }
 
+/*
 int euclides_extendido(int a, int b)
 {
   int r0 = a, r1 = b, q, r2;
@@ -85,6 +85,7 @@ int euclides_extendido(int a, int b)
   }
   return r1;
 }
+  */
 
 int afin(int num, mpz_t a, mpz_t b, mpz_t m)
 {
@@ -92,8 +93,8 @@ int afin(int num, mpz_t a, mpz_t b, mpz_t m)
   mpz_init_set_si(x, num);
   mpz_init(res);
 
-  mpz_mul(res, x, a);   
-  mpz_add(res, res, b); 
+  mpz_mul(res, x, a);
+  mpz_add(res, res, b);
   mpz_mod(res, res, m);
 
   int resultado = mpz_get_si(res);
@@ -113,11 +114,13 @@ int main(int argc, char *argv[])
 
   FILE *entrada = stdin, *salida = stdout;
 
-  int encode;
+  int encode = 0;
 
   char *code = NULL;
 
   int ch, idx = 0;
+
+  int ret = 0;
 
   mpz_init(a);
   mpz_init(b);
@@ -172,12 +175,14 @@ int main(int argc, char *argv[])
   if (euclides(a, m) != 1)
   {
     fprintf(stderr, "No existe inverso multiplicativo\n");
+    ret = -1;
   }
   else
   {
     if (!(code = malloc(TAM * sizeof(char))))
     {
       fprintf(stderr, "Error al reservar memoria\n");
+      ret = -1;
     }
 
     else
@@ -190,7 +195,7 @@ int main(int argc, char *argv[])
           code[idx++] = number_to_char(afin(char_to_number(ch), a, b, m));
         }
         code[idx] = '\0';
-      }
+      }/*
       else
       {
         while ((ch = fgetc(entrada)) != EOF && idx < TAM - 1)
@@ -199,7 +204,7 @@ int main(int argc, char *argv[])
         }
         code[idx] = '\0';
       }
-
+      */
       fprintf(salida, "%s\n", code);
       free(code);
     }
@@ -217,5 +222,5 @@ int main(int argc, char *argv[])
   if (salida != stdout)
     fclose(salida);
 
-  return (0);
+  return ret;
 }
