@@ -10,11 +10,13 @@
 
 /*#include "gmp.h"*/
 
-int *char_to_number(char c)
+#define TAM 4096
+
+int *char_to_number(char *c)
 {
   int i;
-  int *num = malloc(strlen(c)*sizeof(int));
-  for(i = 0; i<strlen(c); i++)
+  int *num = malloc(strlen(c) * sizeof(int));
+  for (i = 0; i < strlen(c); i++)
   {
     if (c[i] >= 'A' && c[i] <= 'Z')
       num[i] = c[i] - 'A';
@@ -27,8 +29,8 @@ int *char_to_number(char c)
 int *number_to_char(int *num)
 {
   int i;
-  char *c = malloc(strlen(num)*sizeof(char));
-  for(i = 0; i<strlen(num); i++)
+  char *c = malloc(strlen(num) * sizeof(char));
+  for (i = 0; i < strlen(num); i++)
   {
     if (num[i] >= 0 && num[i] <= 25)
       c[i] = num[i] + 'A';
@@ -40,9 +42,7 @@ int *number_to_char(int *num)
   return c;
 }
 
-
-
-int euclides(int a, int b)
+int euclides(mpz_t a, mpz_t b)
 {
   int r0 = a, r1 = b, q, r2;
   if (a == 0 && b == 0)
@@ -86,16 +86,23 @@ int euclides_extendido(int a, int b)
   return r1;
 }
 
-int afin(int *num)
+int afin(int num, mpz_t a, mpz_t b, mpz_t m)
 {
-  int i;
-  for(i = 0; i<strlen(num); i++)
-  {
-    num[i] = (num[i] * a + b) % m;
-  }
-  return num;
+  mpz_t x, res;
+  mpz_init_set_si(x, num);
+  mpz_init(res);
+
+  mpz_mul(res, x, a);   
+  mpz_add(res, res, b); 
+  mpz_mod(res, res, m);
+
+  int resultado = mpz_get_si(res);
+
+  mpz_clear(x);
+  mpz_clear(res);
+
+  return resultado;
 }
-/* PROGRAMA PRINCIPAL */
 
 int main(int argc, char *argv[])
 {
@@ -104,11 +111,13 @@ int main(int argc, char *argv[])
 
   int modo;
 
-  FILE *entrada = NULL, *salida = NULL;
+  FILE *entrada = stdin, *salida = stdout;
 
   int encode;
 
   char *code = NULL;
+
+  int ch, idx = 0;
 
   mpz_init(a);
   mpz_init(b);
@@ -160,23 +169,41 @@ int main(int argc, char *argv[])
       i++;
     }
   }
-
-  code = malloc(strlen(a) * sizeof(char));
-
-  if (!encode)
-    if(euclides(a,m)==1){
-      for(int i = 0; i < strlen(a); i++)
-        code[i] = number_to_char(afin(char_to_number(a)));
-    }
+  if (euclides(a, m) != 1)
+  {
     fprintf(stderr, "No existe inverso multiplicativo\n");
-    
-  else{
-    for(int i = 0; i < strlen(a); i++){
-      code[i] = number_to_char(euclides_extendido(char_to_number(a), m));
+  }
+  else
+  {
+    if (!(code = malloc(TAM * sizeof(char))))
+    {
+      fprintf(stderr, "Error al reservar memoria\n");
+    }
+
+    else
+    {
+      if (!encode)
+      {
+
+        while ((ch = fgetc(entrada)) != EOF && idx < TAM - 1)
+        {
+          code[idx++] = number_to_char(afin(char_to_number(ch), a, b, m));
+        }
+        code[idx] = '\0';
+      }
+      else
+      {
+        while ((ch = fgetc(entrada)) != EOF && idx < TAM - 1)
+        {
+          code[idx++] = number_to_char(euclides_extendido(char_to_number(ch), a, b, m));
+        }
+        code[idx] = '\0';
+      }
+
+      fprintf(salida, "%s\n", code);
+      free(code);
     }
   }
-  
-  fprintf(salida, "%s\n", code);
 
   mpz_clear(a);
 
