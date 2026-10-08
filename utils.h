@@ -11,5 +11,6 @@
 int char_to_number(int c);
 char number_to_char(int num);   
 int mcd(int a, int b);
+int euclides_extendido(int a, int b);
 
 #endif

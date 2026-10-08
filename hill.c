@@ -48,17 +48,81 @@ int det(int **k, int n)
     return d;
 }
 
-void matriz_invertida(int **k, int n, int m)
-{   
+void matriz_adjunta(int **k, int n, int **adj)
+{
+    if (n == 1)
+    {
+        adj[0][0] = 1;
+        return;
+    }
 
+    int **temp = (int **)malloc((n - 1) * sizeof(int *));
+    for (int i = 0; i < n - 1; i++)
+    {
+        temp[i] = (int *)malloc((n - 1) * sizeof(int));
+    }
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            int r = 0;
+            for (int fila = 0; fila < n; fila++)
+            {
+                if (fila == i)
+                    continue;
+                int c = 0;
+                for (int col = 0; col < n; col++)
+                {
+                    if (col == j)
+                        continue;
+                    temp[r][c] = k[fila][col];
+                    c++;
+                }
+                r++;
+            }
+
+            int signo = ((i + j) % 2 == 0) ? 1 : -1;
+            adj[j][i] = signo * det(temp, n - 1);
+        }
+    }
+
+    for (int i = 0; i < n - 1; i++)
+    {
+        free(temp[i]);
+    }
+    free(temp);
+}
+
+void matriz_inversa(int **k, int n, int m, int **inv)
+{
+    int d = det(k, n) % m;
+    if (d < 0)
+        d += m;
+
+    int inverso_det = euclides_extendido(d, m);
+    matriz_adjunta(k, n, inv);
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            inv[i][j] = (inv[i][j] * inverso_det) % m;
+            if (inv[i][j] < 0)
+            {
+                inv[i][j] += m;
+            }
+        }
+    }
 }
 
 void hill(int *x, int **k, int n, int m, int *res)
 {
-    for (int i = 0; i < n; i++)
+    int i, j;
+    for (i = 0; i < n; i++)
     {
         res[i] = 0;
-        for (int j = 0; j < n; j++)
+        for (j = 0; j < n; j++)
         {
             res[i] += k[i][j] * x[j];
         }
@@ -74,11 +138,11 @@ int main(int argc, char *argv[])
 
     char *code = NULL;
 
-    int m, n, **k = NULL;
+    int m, n, **k = NULL, **inv = NULL;
 
     int ch = 0, i, j, end, hill_val[MAX_N], *res = NULL;
 
-    for (int i = 1; i < argc; i++)
+    for (i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-C") == 0)
         {
@@ -103,8 +167,8 @@ int main(int argc, char *argv[])
             matriz = fopen(argv[i + 1], "r");
             if (!matriz)
             {
-                fprintf(stderr, "Error al abrir el fichero de entrada\n");
-                return 1;
+                fprintf(stderr, "Error al abrir el fichero de la matriz\n");
+                return -1;
             }
             i++;
         }
@@ -114,7 +178,7 @@ int main(int argc, char *argv[])
             if (!entrada)
             {
                 fprintf(stderr, "Error al abrir el fichero de entrada\n");
-                return 1;
+                return -1;
             }
             i++;
         }
@@ -124,7 +188,7 @@ int main(int argc, char *argv[])
             if (!salida)
             {
                 fprintf(stderr, "Error al abrir el fichero de salida\n");
-                return 1;
+                return -1;
             }
             i++;
         }
@@ -137,7 +201,7 @@ int main(int argc, char *argv[])
         fclose(salida);
         return -1;
     }
-    if (k = malloc(n * sizeof(int *)) == NULL)
+    if ((k = malloc(n * sizeof(int *))) == NULL)
     {
         fprintf(stderr, "Error al reservar memoria\n");
         fclose(matriz);
@@ -145,12 +209,12 @@ int main(int argc, char *argv[])
         fclose(salida);
         ret = -1;
     }
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
-        if (k[i] = malloc(n * sizeof(int)) == NULL)
+        if ((k[i] = malloc(n * sizeof(int))) == NULL)
         {
             fprintf(stderr, "Error al reservar memoria\n");
-            for (int j = 0; j < i; j++)
+            for (j = 0; j < i; j++)
             {
                 free(k[j]);
             }
@@ -161,9 +225,9 @@ int main(int argc, char *argv[])
             ret = -1;
         }
     }
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (j = 0; j < n; j++)
         {
             fscanf(matriz, "%d", &k[i][j]);
         }
@@ -171,7 +235,7 @@ int main(int argc, char *argv[])
     if ((res = malloc(n * sizeof(int))) == NULL)
     {
         fprintf(stderr, "Error al reservar memoria\n");
-        ç for (int j = 0; j < n; j++)
+        for (j = 0; j < n; j++)
         {
             free(k[j]);
         }
@@ -182,7 +246,7 @@ int main(int argc, char *argv[])
         ret = -1;
     }
 
-    if (mcd(det(k), m) != 1)
+    if (mcd(det(k, n), m) != 1)
     {
         fprintf(stderr, "No existe inyectividad\n");
         ret = -1;
@@ -202,20 +266,23 @@ int main(int argc, char *argv[])
                 for (i = 0; i < TAM / n - 1; i++)
                 {
                     end = 0;
-                    for (int j = 0; j < n; j++)
+                    for (j = 0; j < n; j++)
                     {
+
                         if ((ch = fgetc(entrada)) != EOF)
                         {
                             hill_val[j] = char_to_number(ch);
                         }
+
                         else
                         {
-                            hill_val[j] = 25;
+                            for (; j < n; j++)
+                                hill_val[j] = 25;
                             end = 1;
                         }
                     }
                     hill(hill_val, k, n, m, res);
-                    for (int j = 0; j < n; j++)
+                    for (j = 0; j < n; j++)
                     {
                         code[i * n + j] = number_to_char(res[j]);
                     }
@@ -228,11 +295,47 @@ int main(int argc, char *argv[])
             }
             else
             {
-                matriz_invertida(k, n, m);
+                if ((inv = malloc(n * sizeof(int *))) == NULL)
+                {
+                    free(code);
+                    free(res);
+                    for (j = 0; j < n; j++)
+                    {
+                        free(k[j]);
+                    }
+                    free(k);
+                    fclose(matriz);
+                    fclose(entrada);
+                    fclose(salida);
+                    return -1;
+                }
+                for (i = 0; i < n; i++)
+                {
+                    if ((inv[i] = malloc(n * sizeof(int))) == NULL)
+                    {
+                        free(code);
+                        free(res);
+                        for (j = 0; j < n; j++)
+                        {
+                            free(k[j]);
+                        }
+                        free(k);
+                        for (j = 0; j < i; j++)
+                        {
+                            free(inv[j]);
+                        }
+                        free(inv);
+                        fclose(matriz);
+                        fclose(entrada);
+                        fclose(salida);
+                        return -1;
+                    }
+                }
+                matriz_inversa(k, n, m, inv);
                 for (i = 0; i < TAM / n - 1; i++)
                 {
                     end = 0;
-                    for (int j = 0; j < n; j++)
+                    for (j = 0; j < n; j++)
                     {
                         if ((ch = fgetc(entrada)) != EOF)
                         {
@@ -245,8 +348,8 @@ int main(int argc, char *argv[])
                         }
                     }
 
-                    hill(hill_val, k, n, m, res);
-                    for (int j = 0; j < n; j++)
+                    hill(hill_val, inv, n, m, res);
+                    for (j = 0; j < n; j++)
                     {
                         code[i * n + j] = number_to_char(res[j]);
                     }
@@ -256,6 +359,11 @@ int main(int argc, char *argv[])
                         break;
                     }
                 }
+                for (i = 0; i < n; i++)
+                {
+                    free(inv[i]);
+                }
+                free(inv);
             }
             fprintf(salida, "%s\n", code);
             free(code);
@@ -268,7 +376,7 @@ int main(int argc, char *argv[])
     if (salida != stdout)
         fclose(salida);
 
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
         free(k[i]);
     }
