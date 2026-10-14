@@ -50,6 +50,8 @@ int det(int **k, int n)
 
 void matriz_adjunta(int **k, int n, int **adj)
 {
+    int i, j, sign;
+    int x, y;
     if (n == 1)
     {
         adj[0][0] = 1;
@@ -57,37 +59,18 @@ void matriz_adjunta(int **k, int n, int **adj)
     }
 
     int **temp = (int **)malloc((n - 1) * sizeof(int *));
-    for (int i = 0; i < n - 1; i++)
+    for (i = 0; i < n - 1; i++)
     {
         temp[i] = (int *)malloc((n - 1) * sizeof(int));
     }
 
-    for (int i = 0; i < n; i++)
-    {
-        for (int j = 0; j < n; j++)
-        {
-            int r = 0;
-            for (int fila = 0; fila < n; fila++)
-            {
-                if (fila == i)
-                    continue;
-                int c = 0;
-                for (int col = 0; col < n; col++)
-                {
-                    if (col == j)
-                        continue;
-                    temp[r][c] = k[fila][col];
-                    c++;
-                }
-                r++;
-            }
-
-            int signo = ((i + j) % 2 == 0) ? 1 : -1;
-            adj[j][i] = signo * det(temp, n - 1);
+    for (i = 0; i < n; i++){
+        for (j = 0; j < n; j++){
+            
         }
     }
 
-    for (int i = 0; i < n - 1; i++)
+    for (i = 0; i < n - 1; i++)
     {
         free(temp[i]);
     }
