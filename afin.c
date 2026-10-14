@@ -32,7 +32,6 @@ int euclides(mpz_t a, mpz_t b)
   mpz_init_set(r1, b);
   mpz_init(r2);
 
-  /*Comprobacion de valores*/
   if (mpz_cmp_ui(a, 0) == 0 && mpz_cmp_ui(b, 0) == 0)
   {
     mpz_clear(r0);
@@ -50,9 +49,9 @@ int euclides(mpz_t a, mpz_t b)
   mpz_mod(r2, r0, r1);
   while (mpz_cmp_ui(r2, 0) != 0)
   {
-    mpz_set(r0, r1);     // r0 = r1
-    mpz_set(r1, r2);     // r1 = r2
-    mpz_mod(r2, r0, r1); // r2 = r0 % r1
+    mpz_set(r0, r1);
+    mpz_set(r1, r2); 
+    mpz_mod(r2, r0, r1); 
   }
   res = mpz_get_si(r1);
 

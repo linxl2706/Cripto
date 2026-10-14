@@ -48,7 +48,7 @@ int det(int **k, int n)
     return d;
 }
 
-void matriz_adjunta(int **k, int n, int **adj)
+void matriz_adjunta_traspuesta(int **k, int n, int **adj, int m)
 {
     int i, j, sign;
     int x, y;
@@ -66,7 +66,16 @@ void matriz_adjunta(int **k, int n, int **adj)
 
     for (i = 0; i < n; i++){
         for (j = 0; j < n; j++){
-            
+            adj[i][j] = 0;
+            for (x = 0; x < n; x++){
+                for (y = 0; y < n; y++) {
+                    if (x != i && y != j) {
+                        temp[i][j] = k[x][y];
+                    }
+                }
+            }
+            sign = ((i + j) % 2 == 0) ? 1 : -1;
+            adj[j][i] = (sign * det(temp, n - 1)) % m;
         }
     }
 
@@ -79,18 +88,18 @@ void matriz_adjunta(int **k, int n, int **adj)
 
 void matriz_inversa(int **k, int n, int m, int **inv)
 {
+    int i, j;
     int d = det(k, n) % m;
     if (d < 0)
         d += m;
 
-    int inverso_det = euclides_extendido(d, m);
-    matriz_adjunta(k, n, inv);
+    matriz_adjunta_traspuesta(k, n, inv, m);
 
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
-        for (int j = 0; j < n; j++)
+        for (j = 0; j < n; j++)
         {
-            inv[i][j] = (inv[i][j] * inverso_det) % m;
+            inv[i][j] = (inv[i][j] * euclides_extendido(d, m)) % m;
             if (inv[i][j] < 0)
             {
                 inv[i][j] += m;
