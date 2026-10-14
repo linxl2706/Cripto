@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
   mpz_init(b);
   mpz_init(m);
 
+
   for (int i = 1; i < argc; i++)
   {
     if (strcmp(argv[i], "-C") == 0)
@@ -194,7 +195,7 @@ int main(int argc, char *argv[])
           code[idx++] = number_to_char(afin(char_to_number(ch), a, b, m));
         }
         code[idx] = '\0';
-      }/*
+      }
       else
       {
         while ((ch = fgetc(entrada)) != EOF && idx < TAM - 1)
@@ -203,7 +204,6 @@ int main(int argc, char *argv[])
         }
         code[idx] = '\0';
       }
-      */
       fprintf(salida, "%s\n", code);
       free(code);
     }
