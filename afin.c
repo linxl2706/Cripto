@@ -327,7 +327,7 @@ void permute(int n, char *s, int encode) {
         if (block_size <= 1) 
           continue;
 
-        if (encode == 0) {
+        if (!encode) {
             temp = s[start];
             j;
             for (j = start; j < end - 1; j++) {

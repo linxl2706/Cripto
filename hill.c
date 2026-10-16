@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     int m, n = -1, **k = NULL, **inv = NULL;
 
-    int ch = 0, i, j, end, hill_val[MAX_N], *res = NULL;
+    int ch = 0, i, j, len, hill_val[MAX_N], *res = NULL, rv, end = 0;
 
     int idx = 0, num, **key = NULL;
 
@@ -174,23 +174,40 @@ int main(int argc, char *argv[])
                     }
                 }
                 matriz_inversa(k, n, m, inv);
+                key = inv;
             }
 
             fgets(let, TAM, entrada);
-            for (i = 0; i * n < TAM - 1; i++)
+            len = strlen(let);
+            if (len > 0 && let[len -1] == '\n') {
+                let[len - 1] = '\0';
+                len--;
+            }
+            rv = 0;
+
+            int total_blocks = (len + n - 1) / n;
+            if (total_blocks == 0) total_blocks = 1;
+
+            for (i = 0; i < total_blocks; i++)
             {
-                end = 0;
                 for (j = 0; j < n; j++)
                 {
+                    if (rv > len)
+                    {
+                        end = 1;
+                    }
                     if (!end)
-                        hill_val[j] = char_to_number(let[i * n + j]);
-                    else
-                        hill_val[j] = 0;
+                    {
+                        hill_val[j] = char_to_number(let[rv]);
+                        rv++;
+                    }
+                    else{
+                        hill_val[j] = 'w' - 'a';
+                    }
 
                     if (hill_val[j] < 0)
                     {
-                        end = 1;
-                        hill_val[j] = 0;
+                        j--;
                     }
                 }
 
@@ -200,7 +217,8 @@ int main(int argc, char *argv[])
                     code[idx] = number_to_char(res[j]);
                     idx++;
                 }
-                if(end)
+
+                if (end)
                     break;
             }
             code[idx] = '\0';
@@ -269,7 +287,6 @@ void matriz_adjunta_traspuesta(int **k, int n, int **adj, int m)
     {
         for (j = 0; j < n; j++)
         {
-            adj[i][j] = 0;
             ti = 0;
             for (x = 0; x < n; x++)
             {
@@ -277,13 +294,13 @@ void matriz_adjunta_traspuesta(int **k, int n, int **adj, int m)
                     continue;
                 tj = 0;
                 for (y = 0; y < n; y++)
+                {
+                    if (y != j)
                     {
-                        if (y != j)
-                        {
-                            temp[ti][tj] = k[x][y];
-                            tj++;
-                        }
+                        temp[ti][tj] = k[x][y];
+                        tj++;
                     }
+                }
                 ti++;
             }
             sign = ((i + j) % 2 == 0) ? 1 : -1;

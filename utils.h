@@ -6,7 +6,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#define TAM 4096
+#define TAM 16777216
 
 int char_to_number(int c);
 char number_to_char(int num);   
