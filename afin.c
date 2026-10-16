@@ -16,6 +16,7 @@ int euclides(mpz_t a, mpz_t b);
 void euclides_ext(mpz_t r0, mpz_t r1, mpz_t mod, mpz_t a_inv);
 int afin_enc(int num, mpz_t a, mpz_t b, mpz_t m);
 int afin_dec(int num, mpz_t a, mpz_t b, mpz_t m);
+void permute(int n, char *s, int encode);
 
 int main(int argc, char *argv[])
 {
@@ -30,6 +31,8 @@ int main(int argc, char *argv[])
   char *code = NULL, *let = NULL;
 
   int (*func)(int, mpz_t, mpz_t, mpz_t), num;
+
+  int p = 1;
 
   mpz_init(a);
   mpz_init(b);
@@ -99,9 +102,8 @@ int main(int argc, char *argv[])
     }
     else if (strcmp(argv[i], "-p") == 0)
     {
-      atoi(argv[i + 1]);
+      p = atoi(argv[i + 1]);
       i++;
-      return 0;
     }
   }
   if (param != 1111)
@@ -124,7 +126,6 @@ int main(int argc, char *argv[])
     else if (!(let = malloc(TAM * sizeof(char))))
     {
       fprintf(stderr, "Error al reservar memoria\n");
-      free(code);
       ret = -1;
     }
 
@@ -147,8 +148,9 @@ int main(int argc, char *argv[])
       }
       code[idx] = '\0';
 
+      permute(p, code, encode);
+
       fprintf(salida, "%s\n", code);
-      free(code);
     }
   }
 
@@ -312,4 +314,38 @@ int afin_dec(int num, mpz_t a, mpz_t b, mpz_t m)
   mpz_clear(res);
 
   return resultado;
+}
+void permute(int n, char *s, int encode) {
+    int i, j;
+    int len = strlen(s);
+    int start, end, block_size;
+    char temp;
+    
+    if (n <= 1 || !s || len == 0)
+        return;
+
+    for (i = 0; i * n < len; i++) {
+        start = i * n;
+        end = (i + 1) * n < len ? (i + 1) * n : len;
+        block_size = end - start;
+
+        if (block_size <= 1) 
+          continue;
+
+        if (encode == 0) {
+            temp = s[start];
+            j;
+            for (j = start; j < end - 1; j++) {
+                s[j] = s[j + 1];
+            }
+            s[end - 1] = temp;
+        } else {
+            temp = s[end - 1];
+            j;
+            for (j = end - 1; j > start; j--) {
+                s[j] = s[j - 1];
+            }
+            s[start] = temp;
+        }
+    }
 }
