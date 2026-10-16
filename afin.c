@@ -17,6 +17,7 @@ void euclides_ext(mpz_t r0, mpz_t r1, mpz_t mod, mpz_t a_inv);
 int afin_enc(int num, mpz_t a, mpz_t b, mpz_t m);
 int afin_dec(int num, mpz_t a, mpz_t b, mpz_t m);
 void permute(int n, char *s, int encode);
+void clear(FILE *entrada, FILE *salida, char *code, char *let, mpz_t a, mpz_t b, mpz_t m, int param);
 
 int main(int argc, char *argv[])
 {
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
       if (param >= 1000)
       {
         fprintf(stderr, "Error: no se puede codificar y decodificar al mismo tiempo\n");
-        clear(entrada, salida, code, let);
+        clear(entrada, salida, code, let, a, b, m, param);
         return -1;
       }
       param += 1000;
@@ -57,7 +58,7 @@ int main(int argc, char *argv[])
       if (param >= 1000)
       {
         fprintf(stderr, "Error: no se puede codificar y decodificar al mismo tiempo\n");
-        clear(entrada, salida, code, let);
+        clear(entrada, salida, code, let, a, b, m, param);
         return -1;
       }
       param += 1000;
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
   }
   if (param != 1111)
   {
-    fprintf(stderr, "Uso -C/-D -m [modulo] -a [clave a] -b [clave b] -i [fichero de entrada] -o [fichero de salida] -p [(opcional) numero a permutar]\n");
+    fprintf(stderr, "Uso -C/-D -m [tamano del espacio de texto cifrado] -a [coeficiente multiplicativo de la funcion afin] -b [termino constante de la funcion afin] -i [fichero de entrada] -o [fichero de salida] -p [(opcional) numero a permutar]\n");
     ret = -1;
   }
   if (euclides(a, m) != 1)
@@ -154,13 +155,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  mpz_clear(a);
-
-  mpz_clear(b);
-
-  mpz_clear(m);
-
-  clear(entrada, salida, code, let);
+  clear(entrada, salida, code, let, a, b, m, param);
 
   return ret;
 }
@@ -348,4 +343,27 @@ void permute(int n, char *s, int encode) {
             s[start] = temp;
         }
     }
+}
+
+void clear(FILE *entrada, FILE *salida, char *code, char *let, mpz_t a, mpz_t b, mpz_t m, int param) {
+  if (param % 10 == 1)
+    mpz_clear(a);
+
+  if (param % 100 >= 10)
+    mpz_clear(b);
+    
+  if (param % 1000 >= 100)
+    mpz_clear(m);
+
+  if(entrada && entrada!=stdin)
+    fclose(entrada);
+
+  if(salida && salida!=stdout)
+    fclose(salida);
+
+  if(code)
+    free(code);
+
+  if(let)
+    free(let);
 }

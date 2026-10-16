@@ -11,7 +11,6 @@
 int char_to_number(int c);
 char number_to_char(int num);   
 int mcd(int a, int b);
-void euclides_extendido(int m, int a, int* a_inv);
-void clear(FILE *entrada, FILE *salida, char *code, char *let);
+int euclides_extendido(int m, int a);
 
 #endif
