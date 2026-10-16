@@ -42,3 +42,44 @@ int mcd(int a, int b)
   }
   return r1;
 }
+
+void euclides_extendido(int m, int a, int* a_inv){
+    int r0 = m;
+    int r1 = a;
+    int q;
+    int mod;
+    int v_i, v0 = 0, v1 = 1;
+    int u_i, u0 = 1, u1 = 0;
+
+     while (r1 != 0){
+        mod = r0 % r1;
+        q = r0 / r1;
+        r0 = r1;
+        r1 = mod;
+        
+        u_i = u0 - q * u1;
+        v_i = v0 - q * v1;
+        u0 = u1;
+        u1 = u_i;
+        v0 = v1;
+        v1 = v_i;
+    }
+
+    if (v0 < 0) v0 += m;
+    
+    *a_inv = v0;
+}
+
+void clear(FILE *entrada, FILE *salida, char *code, char *let) {
+  if(entrada && entrada!=stdin)
+    fclose(entrada);
+
+  if(salida && salida!=stdout)
+    fclose(salida);
+
+  if(code)
+    free(code);
+
+  if(let)
+    free(let);
+}

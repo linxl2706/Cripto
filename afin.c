@@ -8,19 +8,159 @@
 
 #include <gmp.h>
 
+#include "utils.h"
+
 /*#include "gmp.h"*/
 
-#define TAM 4096
+int euclides(mpz_t a, mpz_t b);
+void euclides_ext(mpz_t r0, mpz_t r1, mpz_t mod, mpz_t a_inv);
+int afin_enc(int num, mpz_t a, mpz_t b, mpz_t m);
+int afin_dec(int num, mpz_t a, mpz_t b, mpz_t m);
 
-int char_to_number(int c) {
-    if (isupper(c)) return c - 'A';
-    if (islower(c)) return c - 'a';
-    return -1;
-}
+int main(int argc, char *argv[])
+{
+  mpz_t a, b, m;
 
-char number_to_char(int num) {
-    if (num >= 0 && num <= 25) return num + 'a';
-    return '\0';
+  FILE *entrada = stdin, *salida = stdout;
+
+  int encode, param = 0, ret = 0;
+
+  int i, idx = 0;
+
+  char *code = NULL, *let = NULL;
+
+  int (*func)(int, mpz_t, mpz_t, mpz_t), num;
+
+  mpz_init(a);
+  mpz_init(b);
+  mpz_init(m);
+
+  for (i = 1; i < argc; i++)
+  {
+    if (strcmp(argv[i], "-C") == 0)
+    {
+      encode = 0;
+      if (param >= 1000)
+      {
+        fprintf(stderr, "Error: no se puede codificar y decodificar al mismo tiempo\n");
+        clear(entrada, salida, code, let);
+        return -1;
+      }
+      param += 1000;
+    }
+    else if (strcmp(argv[i], "-D") == 0)
+    {
+      encode = 1;
+      if (param >= 1000)
+      {
+        fprintf(stderr, "Error: no se puede codificar y decodificar al mismo tiempo\n");
+        clear(entrada, salida, code, let);
+        return -1;
+      }
+      param += 1000;
+    }
+    else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc)
+    {
+      mpz_set_str(m, argv[i + 1], 10);
+      i++;
+      param++;
+    }
+    else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc)
+    {
+      mpz_set_str(a, argv[i + 1], 10);
+      i++;
+      param += 10;
+    }
+    else if (strcmp(argv[i], "-b") == 0 && i + 1 < argc)
+    {
+      mpz_set_str(b, argv[i + 1], 10);
+      i++;
+      param += 100;
+    }
+    else if (strcmp(argv[i], "-i") == 0 && i + 1 < argc)
+    {
+      entrada = fopen(argv[i + 1], "r");
+      if (!entrada)
+      {
+        fprintf(stderr, "Error al abrir el fichero de entrada\n");
+        return 1;
+      }
+      i++;
+    }
+    else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc)
+    {
+      salida = fopen(argv[i + 1], "w");
+      if (!salida)
+      {
+        fprintf(stderr, "Error al abrir el fichero de salida\n");
+        return 1;
+      }
+      i++;
+    }
+    else if (strcmp(argv[i], "-p") == 0)
+    {
+      atoi(argv[i + 1]);
+      i++;
+      return 0;
+    }
+  }
+  if (param != 1111)
+  {
+    fprintf(stderr, "Uso -C/-D -m [modulo] -a [clave a] -b [clave b] -i [fichero de entrada] -o [fichero de salida] -p [(opcional) numero a permutar]\n");
+    ret = -1;
+  }
+  if (euclides(a, m) != 1)
+  {
+    fprintf(stderr, "No existe inverso multiplicativo\n");
+    ret = -1;
+  }
+  else
+  {
+    if (!(code = malloc(TAM * sizeof(char))))
+    {
+      fprintf(stderr, "Error al reservar memoria\n");
+      ret = -1;
+    }
+    else if (!(let = malloc(TAM * sizeof(char))))
+    {
+      fprintf(stderr, "Error al reservar memoria\n");
+      free(code);
+      ret = -1;
+    }
+
+    else
+    {
+      if (!encode)
+        func = afin_enc;
+      else
+        func = afin_dec;
+
+      fgets(let, TAM, entrada);
+      for (i = 0; i < TAM - 1; i++)
+      {
+          num = char_to_number(let[i]);
+          if (num >= 0){
+            num = func(num, a, b, m);
+            code[idx] = number_to_char(num);
+            idx++;
+          }
+      }
+      code[idx] = '\0';
+
+      fprintf(salida, "%s\n", code);
+      free(code);
+    }
+  }
+
+  mpz_clear(a);
+
+  mpz_clear(b);
+
+  mpz_clear(m);
+
+  clear(entrada, salida, code, let);
+
+  return ret;
 }
 
 int euclides(mpz_t a, mpz_t b)
@@ -50,8 +190,8 @@ int euclides(mpz_t a, mpz_t b)
   while (mpz_cmp_ui(r2, 0) != 0)
   {
     mpz_set(r0, r1);
-    mpz_set(r1, r2); 
-    mpz_mod(r2, r0, r1); 
+    mpz_set(r1, r2);
+    mpz_mod(r2, r0, r1);
   }
   res = mpz_get_si(r1);
 
@@ -62,33 +202,80 @@ int euclides(mpz_t a, mpz_t b)
   return res;
 }
 
-/*
-int euclides_extendido(int a, int b)
+void euclides_ext(mpz_t r0, mpz_t r1, mpz_t mod, mpz_t a_inv)
 {
-  int r0 = a, r1 = b, q, r2;
-  if (a == 0 && b == 0)
-  {
-    return -1;
-  }
-  if (b > a)
-  {
-    r0 = b;
-    r1 = a;
-  }
-  r2 = r0 % r1;
-  while (r2 != 0)
-  {
-    r0 = r1;
-    r1 = r2;
-    r2 = r0 % r1;
-  }
-  return r1;
-}
-  */
+  mpz_t u0, u1, u_i;
+  mpz_t v0, v1, v_i;
 
-int afin(int num, mpz_t a, mpz_t b, mpz_t m)
+  mpz_t q;                             // quoziente
+  mpz_t local_r0, local_r1, local_mod; // r0, r1 e modulo locali per non sporcare il main
+  mpz_t temp;                          // variabile temporanea per suddivisione compiti
+
+  mpz_init(q);
+  mpz_init(temp);
+  mpz_init(v_i);
+  mpz_init(u_i);
+
+  mpz_init_set_ui(u0, 1);
+  mpz_init_set_ui(u1, 0);
+  mpz_init_set_ui(v0, 0);
+  mpz_init_set_ui(v1, 1);
+  mpz_init_set(local_r0, r0);
+  mpz_init_set(local_r1, r1);
+  mpz_init_set(local_mod, mod);
+
+  // riadatto euclide (versione esteso) (r0 = m, r1 = a) quindi v_0 = a^-1 mod m
+  while (mpz_cmp_ui(local_r1, 0) != 0)
+  {
+    mpz_mod(local_mod, local_r0, local_r1); // local_mod = local_r0 % local_r1;
+    mpz_tdiv_q(q, local_r0, local_r1);      //         q = local_r0 / local_r1;
+    mpz_set(local_r0, local_r1);            //  local_r0 = local_r1;
+    mpz_set(local_r1, local_mod);           //  local_r1 = local_mod;
+
+    // calcoli su u0, u1, u_i
+    mpz_mul(temp, q, u1);
+    mpz_sub(temp, u0, temp);
+    mpz_set(u_i, temp); // u_i = u0 - q * u1;
+
+    mpz_set(u0, u1);  // u0 = u1;
+    mpz_set(u1, u_i); // u1 = u_i;
+
+    // calcoli su v0, v1, v_i
+    mpz_mul(temp, q, v1);
+    mpz_sub(temp, v0, temp);
+    mpz_set(v_i, temp); // v_i = v0 - q * v1;
+
+    mpz_set(v0, v1);  // v0 = v1;
+    mpz_set(v1, v_i); // v1 = v_i;
+  }
+
+  if (mpz_cmp_ui(v0, 0) < 0)
+  {
+    mpz_add(temp, v0, mod);
+    mpz_set(v0, temp); // v0 += mod;
+  }
+
+  mpz_set(a_inv, v0); // in questo modo passo v0 alla variabile a_inv e posso usarla nel main
+
+  mpz_clear(u0);
+  mpz_clear(u1);
+  mpz_clear(u_i);
+
+  mpz_clear(v0);
+  mpz_clear(v1);
+  mpz_clear(v_i);
+
+  mpz_clear(local_mod);
+  mpz_clear(local_r0);
+  mpz_clear(local_r1);
+  mpz_clear(q);
+  mpz_clear(temp);
+}
+
+int afin_enc(int num, mpz_t a, mpz_t b, mpz_t m)
 {
   mpz_t x, res;
+  int resultado;
   mpz_init_set_si(x, num);
   mpz_init(res);
 
@@ -96,7 +283,7 @@ int afin(int num, mpz_t a, mpz_t b, mpz_t m)
   mpz_add(res, res, b);
   mpz_mod(res, res, m);
 
-  int resultado = mpz_get_si(res);
+  resultado = mpz_get_si(res);
 
   mpz_clear(x);
   mpz_clear(res);
@@ -104,122 +291,25 @@ int afin(int num, mpz_t a, mpz_t b, mpz_t m)
   return resultado;
 }
 
-int main(int argc, char *argv[])
+int afin_dec(int num, mpz_t a, mpz_t b, mpz_t m)
 {
+  mpz_t a_inv, x, res;
+  int resultado;
+  mpz_init(a_inv);
+  mpz_init_set_si(x, num);
+  mpz_init(res);
 
-  mpz_t a, b, m;
+  euclides_ext(m, a, m, a_inv);
 
-  int modo;
+  mpz_sub(res, x, b);
+  mpz_mul(res, res, a_inv);
+  mpz_mod(res, res, m);
 
-  FILE *entrada = stdin, *salida = stdout;
+  resultado = mpz_get_si(res);
 
-  int encode = 0;
+  mpz_clear(a_inv);
+  mpz_clear(x);
+  mpz_clear(res);
 
-  char *code = NULL;
-
-  int ch, idx = 0;
-
-  int ret = 0;
-
-  mpz_init(a);
-  mpz_init(b);
-  mpz_init(m);
-
-
-  for (int i = 1; i < argc; i++)
-  {
-    if (strcmp(argv[i], "-C") == 0)
-    {
-      encode = 0;
-    }
-    else if (strcmp(argv[i], "-D") == 0)
-    {
-      encode = 1;
-    }
-    else if (strcmp(argv[i], "-m") == 0 && i + 1 < argc)
-    {
-      mpz_set_str(m, argv[i + 1], 10);
-      i++;
-    }
-    else if (strcmp(argv[i], "-a") == 0 && i + 1 < argc)
-    {
-      mpz_set_str(a, argv[i + 1], 10);
-      i++;
-    }
-    else if (strcmp(argv[i], "-b") == 0 && i + 1 < argc)
-    {
-      mpz_set_str(b, argv[i + 1], 10);
-      i++;
-    }
-    else if (strcmp(argv[i], "-i") == 0 && i + 1 < argc)
-    {
-      entrada = fopen(argv[i + 1], "r");
-      if (!entrada)
-      {
-        fprintf(stderr, "Error al abrir el fichero de entrada\n");
-        return 1;
-      }
-      i++;
-    }
-    else if (strcmp(argv[i], "-o") == 0 && i + 1 < argc)
-    {
-      salida = fopen(argv[i + 1], "w");
-      if (!salida)
-      {
-        fprintf(stderr, "Error al abrir el fichero de salida\n");
-        return 1;
-      }
-      i++;
-    }
-  }
-  if (euclides(a, m) != 1)
-  {
-    fprintf(stderr, "No existe inverso multiplicativo\n");
-    ret = -1;
-  }
-  else
-  {
-    if (!(code = malloc(TAM * sizeof(char))))
-    {
-      fprintf(stderr, "Error al reservar memoria\n");
-      ret = -1;
-    }
-
-    else
-    {
-      if (!encode)
-      {
-
-        while ((ch = fgetc(entrada)) != EOF && idx < TAM - 1)
-        {
-          code[idx++] = number_to_char(afin(char_to_number(ch), a, b, m));
-        }
-        code[idx] = '\0';
-      }
-      else
-      {
-        while ((ch = fgetc(entrada)) != EOF && idx < TAM - 1)
-        {
-          code[idx++] = number_to_char(euclides_extendido(char_to_number(ch), a, b, m));
-        }
-        code[idx] = '\0';
-      }
-      fprintf(salida, "%s\n", code);
-      free(code);
-    }
-  }
-
-  mpz_clear(a);
-
-  mpz_clear(b);
-
-  mpz_clear(m);
-
-  if (entrada != stdin)
-    fclose(entrada);
-
-  if (salida != stdout)
-    fclose(salida);
-
-  return ret;
+  return resultado;
 }
