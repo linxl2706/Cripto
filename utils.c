@@ -10,9 +10,26 @@
 
 #include "utils.h"
 
+char convert(char c) {
+  if (c == 'á' || c == 'Á')
+    return 'a';
+  if (c == 'é' || c == 'É')
+    return 'e';
+  if (c == 'í' || c == 'Í')
+    return 'i';
+  if (c == 'o' || c == 'Ó')
+    return 'o';
+  if (c == 'ú' || c == 'ü' || c == 'Ú')
+    return 'u';
+  if (c == 'ñ' || c == 'Ñ')
+    return 'n';
+  return c;
+}
+
 int char_to_number(int c) {
-    if (isupper(c)) return c - 'A';
-    if (islower(c)) return c - 'a';
+    char ch = convert(c);
+    if (isupper(ch)) return c - 'A';
+    if (islower(ch)) return c - 'a';
     return -1;
 }
 

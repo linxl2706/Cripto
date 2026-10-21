@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 
     int m, n = -1, **k = NULL, **inv = NULL;
 
-    int ch = 0, i, j, len, hill_val[MAX_N], *res = NULL, rv, end = 0;
+    int ch = 0, i, j, len, hill_val[MAX_N], *res = NULL, rv, end = 0, total_blocks;
 
     int idx = 0, num, **key = NULL;
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
             }
             rv = 0;
 
-            int total_blocks = (len + n - 1) / n;
+            total_blocks = (len + n - 1) / n;
             if (total_blocks == 0) total_blocks = 1;
 
             for (i = 0; i < total_blocks; i++)

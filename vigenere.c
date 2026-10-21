@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
     }
     if (param != 111)
     {
-        fprintf(stderr, "Uso -C/-D -m [tamano del espacio de texto cifrado] -k [cadena de caracteres usada como clave] -i [fichero de entrada] -o [fichero de salida] -p [(opcional) numero a permutar]\n");
+        fprintf(stderr, "Uso -C/-D -m [tamano del espacio de texto cifrado] -k [cadena de caracteres usada como clave] -i [fichero de entrada] -o [fichero de salida]\n");
         return -1;
     }
     len_k = strlen(k) - 1;
