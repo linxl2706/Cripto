@@ -20,9 +20,9 @@ typedef struct
 
 typedef struct
 {
-    double tam;
-    double freq;
-    Freq let_freq[ALPHABET];
+    double tam[ALPHABET];
+    double freq[ALPHABET];
+    Freq let_freq[ALPHABET][ALPHABET];
 } Lang;
 
 int kasiski(int l, char *let, int len, int i);
@@ -116,6 +116,7 @@ int kasiski(int l, char *let, int len, int i)
     int j, k;
     int ret = -1;
     int dis[TAM], d = 0;
+    double rel;
 
     if (l >= len)
         return ret;
@@ -152,33 +153,46 @@ int kasiski(int l, char *let, int len, int i)
     return ret;
 }
 
-Lang ic_freq(char *let, int len)
+int ic(int l, char *let, int len, int il, double leng_freq)
 {
-    int i;
+    int i, j, k;
     Lang lf;
     lf.tam = len;
     double f;
-    for (i = 0; i < ALPHABET; i++)
-    {
-        lf.let_freq[i].let = 'a' + i;
-        lf.let_freq[i].times = 0;
+    int find = 1;
+    int rel;
+    for (k = 1; k <= TAM; k++){
+        for (j = 0; j < k; j++)
+        {
+            for (i = 0; i < ALPHABET; i++)
+            {
+                lf.let_freq[j][i].let = 'a' + i;
+                lf.let_freq[j][i].times = 0;
+            }
+            for (i = j; i < len; i+=k)
+            {
+                lf.let_freq[char_to_number(let[j][i])].times++;
+            }
+            lf.freq[j] = 0;
+            for (i = 0; i < ALPHABET; i++)
+            {
+                f = lf.let_freq[j][i].times / lf.tam;
+                lf.freq[j] += f * f;
+            }
+        }
+        for (j = 0; j < k; j++) {
+            rel = lf.freq[j] / leng_freq;
+            if (rel > 0)
+                rel = -rel;
+            if (rel < 0.9)
+                find = 0;
+        }
+        if (!find)
+            break;
     }
-    for (i = 0; i < len; i++)
-    {
-        lf.let_freq[char_to_number(let[i])].times++;
-    }
-    lf.freq = 0;
-    for (i = 0; i < ALPHABET; i++)
-    {
-        f = lf.let_freq[i].times / lf.tam;
-        lf.freq += f * f;
-    }
-
-    return lf;
+        
+    return k;
 }
 
-int ic(int l, char *let, int len, int i)
-{
-}
 void calculo_k(int l, char *let, int *k, int k_len);
 void descifrar_vigenere(int l, char *let, int *k);
