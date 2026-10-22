@@ -18,9 +18,9 @@ int main(int argc, char *argv[])
 
     int encode = 0, ret = 0, param = 0;
 
-    char code[TAM], k[TAM], *let = NULL;
+    char code[TAM] = "", k[TAM] ="", *let = NULL;
 
-    int m, val, k_val, res, k_num[TAM], idx;
+    int m, val, k_val, res, k_num[TAM] ={}, idx;
 
     int i, j, len_k, len_w;
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Uso -C/-D -m [tamano del espacio de texto cifrado] -k [cadena de caracteres usada como clave] -i [fichero de entrada] -o [fichero de salida]\n");
         return -1;
     }
-    len_k = strlen(k) - 1;
+    len_k = strlen(k);
     for (i = 0; i < len_k; i++)
     {
         k_num[i] = char_to_number(k[i]);
@@ -98,12 +98,7 @@ int main(int argc, char *argv[])
 
     let = (char *)malloc(TAM * sizeof(char));
     fgets(let, TAM, entrada);
-    len_w = strlen(let);
-    if (len_w > 0 && let[len_w - 1] == '\n')
-    {
-        let[len_w - 1] = '\0';
-        len_w--;
-    }
+    len_w = strlen(let);  
     idx = 0;
     for (i = 0, j = 0; i < len_w; i++)
     {

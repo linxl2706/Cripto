@@ -11,19 +11,17 @@
 #include "utils.h"
 
 char convert(char c) {
-  if (c == 'á' || c == 'Á')
-    return 'a';
-  if (c == 'é' || c == 'É')
-    return 'e';
-  if (c == 'í' || c == 'Í')
-    return 'i';
-  if (c == 'o' || c == 'Ó')
-    return 'o';
-  if (c == 'ú' || c == 'ü' || c == 'Ú')
-    return 'u';
-  if (c == 'ñ' || c == 'Ñ')
-    return 'n';
-  return c;
+    unsigned char uc = (unsigned char)c;
+
+    // Using Latin-1 hex values to avoid multichar warnings and handle Spanish accents
+    if (uc == 0xE1 || uc == 0xC1) return 'a'; // á, Á
+    if (uc == 0xE9 || uc == 0xC9) return 'e'; // é, É
+    if (uc == 0xED || uc == 0xCD) return 'i'; // í, Í
+    if (uc == 0xF3 || uc == 0xD3) return 'o'; // ó, Ó
+    if (uc == 0xFA || uc == 0xFC || uc == 0xDA) return 'u'; // ú, ü, Ú
+    if (uc == 0xF1 || uc == 0xD1) return 'n'; // ñ, Ñ
+    
+    return c;
 }
 
 int char_to_number(int c) {
