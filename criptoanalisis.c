@@ -137,18 +137,18 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (k_len <= 0)
+    if (k_ic <= 0)
     {
-        k_len = k_ic;
+        k_ic = k_len;
     }
-    k = (int *)malloc(k_len * sizeof(int));
+    k = (int *)malloc(k_ic * sizeof(int));
     if (!k)
     {
         clear(let, k, lf);
     }
 
-    calculo_k(l, let, len, k, k_len, esp, lf);
-    for (i = 0, j = 0; i < len; i++, j = (j + 1) % k_len)
+    calculo_k(l, let, len, k, k_ic, esp, lf);
+    for (i = 0, j = 0; i < len; i++, j = (j + 1) % k_ic)
     {
         ch = let[i] - k[j];
         while (ch < 'a')
@@ -158,13 +158,11 @@ int main(int argc, char *argv[])
         code[i] = ch;
     }
     code[i] = '\0';
-    fprintf(salida, "longitud de la clave: %d\n", k_len);
+    fprintf(salida, "longitud de la clave: %d\n", k_ic);
     fprintf(salida, "clave: {");
-    for (i = 0; i < k_len; i++)
+    for (i = 0; i < k_ic; i++)
     {
-        fprintf(salida, "%d", k[i]);
-        if (i + 1 < k_len)
-            fprintf(salida, ", ");
+        fprintf(salida, "%c", number_to_char(k[i]));
     }
     fprintf(salida, "}\ntexto descifrado:\n%s\n", code);
     clear(let, k, lf);

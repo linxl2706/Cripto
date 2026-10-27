@@ -5,90 +5,108 @@
 #define L1 25
 #define L2 27
 #define L3 28
-#define TOTAL_KEY (L1 + L2 + L3) // 80 bit
+#define TOTAL_KEY (L1 + L2 + L3) // 80 bits
 
 int reg1[L1];
 int reg2[L2];
 int reg3[L3];
 int secret_key[TOTAL_KEY];
 
-// Legge gli 80 bit dal file della chiave ignorando spazi e a capo (\n)
+// Reads the 80 bits from the key file, ignoring spaces, tabs, and newlines (\n, \r)
 int loadKeyFromFile(const char* filename, int key_array[], int expected_bits){
     FILE *fkey = fopen(filename, "r");
     if (fkey == NULL){
-        fprintf(stderr,"Errore apertura file chiave\n");
+        fprintf(stderr, "Error: cannot open key file\n");
         return 0;
     }
     
     int count = 0;
     int ch;
 
+    // Ignore whitespace, tabs, and newline characters
     while ((ch = fgetc(fkey)) != EOF && count < expected_bits){
         if (ch == '0' || ch == '1'){
             key_array[count++] = ch - '0';
         }
-        // ignora spazi, tabulazioni e caratteri di newline (\n, \r)
     }
     fclose(fkey);
 
     if (count != expected_bits){
-        fprintf(stderr, "Errore: il file chiave contiene solo %d bit (richiesti %d)\n", count, expected_bits);
+        fprintf(stderr, "Error: key file contains only %d bits (%d required)\n", count, expected_bits);
         return 0;
     }
     return 1; 
 }
 
-// Inizializza i 3 registri distribuendo gli 80 bit della chiave
-void initialize_Reg(){
+// Initializes the 3 registers by distributing the 80 bits of the secret key
+// Returns 1 on success, 0 if any register segment is all zeros (degenerate forbidden state)
+int initialize_Reg(){
     int k = 0;
-    for (int i = 0; i < L1; i++) reg1[i] = secret_key[k++];
-    for (int i = 0; i < L2; i++) reg2[i] = secret_key[k++];
-    for (int i = 0; i < L3; i++) reg3[i] = secret_key[k++];
+    int sum1 = 0, sum2 = 0, sum3 = 0;
+
+    for (int i = 0; i < L1; i++){
+        reg1[i] = secret_key[k++];
+        sum1 += reg1[i];
+    }
+    for (int i = 0; i < L2; i++){
+        reg2[i] = secret_key[k++];
+        sum2 += reg2[i];
+    }
+    for (int i = 0; i < L3; i++){
+        reg3[i] = secret_key[k++];
+        sum3 += reg3[i];
+    }
+
+    // Check for the degenerate all-zero state
+    if (sum1 == 0 || sum2 == 0 || sum3 == 0){
+        fprintf(stderr, "Error: invalid key! One of the register segments is all zeros.\n");
+        return 0;
+    }
+    return 1;
 }
 
-// Genera il bit di keystream combinando i 3 registri con funzione non-lineare
+// Generates the keystream bit by combining the 3 registers with a non-linear function
 unsigned int sequenceCiphering(){
-    unsigned int z1 = reg1[L1 - 1]; // bit uscente R1
-    unsigned int z2 = reg2[L2 - 1]; // bit uscente R2
-    unsigned int z3 = reg3[L3 - 1]; // bit uscente R3
+    unsigned int z1 = reg1[L1 - 1]; // output bit from R1
+    unsigned int z2 = reg2[L2 - 1]; // output bit from R2
+    unsigned int z3 = reg3[L3 - 1]; // output bit from R3
 
-    // Funzione non lineare: distrugge la linearità di Berlekamp-Massey
+    // Non-linear function (Majority): breaks Berlekamp-Massey linearity
     return (z1 | z2) ^ (z2 | z3) ^ (z1 | z3);
 }
 
-// Avanza lo stato dei 3 registri secondo i rispettivi polinomi primitivi
+// Advances the state of the 3 registers according to their respective primitive polynomials
 void newStateRegister(){
-
-    // R1 (Grado 25: tap a 24 e 2)
+    // R1 (Degree 25: taps at 24 and 2)
     int bit_0_r1 = reg1[L1 - 1] ^ reg1[2];
     for (int i = L1 - 1; i >= 1; i--) reg1[i] = reg1[i - 1];
     reg1[0] = bit_0_r1;
 
-    // R2 (Grado 27: tap a 26, 7, 6, 0)
+    // R2 (Degree 27: taps at 26, 7, 6, 0)
     int bit_0_r2 = reg2[L2 - 1] ^ reg2[7] ^ reg2[6] ^ reg2[0];
     for (int i = L2 - 1; i >= 1; i--) reg2[i] = reg2[i - 1];
     reg2[0] = bit_0_r2;
 
-    // R3 (Grado 28: tap a 27 e 2)
+    // R3 (Degree 28: taps at 27 and 2)
     int bit_0_r3 = reg3[L3 - 1] ^ reg3[2];
     for (int i = L3 - 1; i >= 1; i--) reg3[i] = reg3[i - 1];
     reg3[0] = bit_0_r3;
 }
 
-// Cifra/decifra il bit i-esimo del byte
+// Encrypts/decrypts the i-th bit of the byte
 char encryptionFunction(unsigned int z, unsigned char bit_pt, int i){
     return (z << i) ^ bit_pt;
 }
 
-// legge tutto il contenuto di un FILE* in un buffer dinamico, restituisce la stringa
-char* readText(FILE fin, int length){
+// Reads the entire content of a FILE* into a dynamic buffer, returns the buffer pointer
+char* readText(FILE *fin, int* length){
     int capacity = 256;
     (*length) = 0;
     char* buffer = malloc(sizeof *buffer * capacity);
 
     if (buffer == NULL) return NULL;
 
-    int read_char;  // int perché fgetc restituisce int (per distinguere EOF da un carattere valido)
+    int read_char;  // int because fgetc returns int (to distinguish EOF from valid byte)
     while ((read_char = fgetc(fin)) != EOF){
         if ((*length) >= capacity - 1){
             capacity *= 2;
@@ -103,27 +121,27 @@ char* readText(FILE fin, int length){
     return buffer;
 }
 
-void writeText (FILE* fout, int length, unsigned char* txt){
-    for (int i=0; i<length; i++){
+// Writes the byte buffer to the output file
+void writeText(FILE* fout, int length, unsigned char* txt){
+    for (int i = 0; i < length; i++){
         fputc(txt[i], fout);
     }
 }
 
 int main(int argc, char* argv[]){
-    // ./flujo.c {-C | -D} {-k K} [-i file_in] [-o file_out]
+    // Usage: ./flujo {-C | -D} -k key_file [-i file_in] [-o file_out]
 
     int count;
     int index;
     unsigned int z_out;
     int len_text = 0;
 
-    char mode = 0;      // 'C' per cifratura, 'D' per decifratura
+    char mode = 0;              // 'C' for encryption, 'D' for decryption
     char* input_file = NULL;
     char* output_file = NULL;
     char* key_file = NULL;
-    int sKey[80] = {0};  // inizializzo la chiave a 0 senza for
 
-    for (int i=1; i<argc; i++){
+    for (int i = 1; i < argc; i++){
         if (strcmp(argv[i], "-C") == 0)
             mode = 'C';
         else if (strcmp(argv[i], "-D") == 0)
@@ -136,46 +154,51 @@ int main(int argc, char* argv[]){
             output_file = argv[++i];
     }
 
-    // validazione parametri
+    // Parameter validation
     if (mode == 0){
-        fprintf(stderr, "Errore: specificare -C o -D\n");
+        fprintf(stderr, "Error: specify -C or -D\n");
         return 1;
     }
 
     if (key_file == NULL){
-        fprintf(stderr, "Errore: specificare il file della chiave con -k\n");
+        fprintf(stderr, "Error: specify the key file with -k\n");
         return 1;
     }
 
-    // Caricamento chiave dal file
+    // Load key from file
     if (!loadKeyFromFile(key_file, secret_key, TOTAL_KEY)){
         return 1;
     }
 
-    // apertura file di input (stdin se non specificato)
+    // Check for the degenerate all-zero state
+    if (!initialize_Reg()){
+        return 1;
+    }
+
+    // Open input file (stdin if not specified)
     FILE *fin = stdin;
     if (input_file != NULL){
-        fin = fopen(input_file, "rb");   // fopen apre il file e restituisce un puntatore FILE*
+        fin = fopen(input_file, "rb");   // open in binary read mode
         if (fin == NULL){
-            fprintf(stderr, "Errore apertura file input\n");
+            fprintf(stderr, "Error opening input file\n");
             return 1;
         }
     }
 
-    // apertura file di output (stdout se non specificato)
+    // Open output file (stdout if not specified)
     FILE *fout = stdout;
     if (output_file != NULL){
-        fout = fopen(output_file, "wb");
+        fout = fopen(output_file, "wb");  // open in binary write mode
         if (fout == NULL){
-            fprintf(stderr, "Errore apertura file output\n");
+            fprintf(stderr, "Error opening output file\n");
             return 1;
         }
     }
 
-    // lettura del testo completo in memoria
+    // Read entire text into memory
     char* text = readText(fin, &len_text);
     if (text == NULL){
-        fprintf(stderr, "Errore lettura testo\n");
+        fprintf(stderr, "Error reading input text\n");
         return 1;
     }
     if (fin != stdin) fclose(fin);
@@ -184,16 +207,15 @@ int main(int argc, char* argv[]){
     unsigned char cipher_text[len_text];
 
     if (mode == 'C'){
-
-        // Encrypting 
+        // Encryption
         initialize_Reg();
         count = 8;
         index = 0;
         z_out = 0;
 
-        while (index<len_text){
-            cipher_text[index] = text[index];          // preservo intatto il plain_text
-            while(count>=1){
+        while (index < len_text){
+            cipher_text[index] = text[index];          // preserve original plain_text
+            while (count >= 1){
                 z_out = sequenceCiphering();
                 cipher_text[index] = encryptionFunction(z_out, cipher_text[index], --count);
                 newStateRegister();
@@ -204,16 +226,15 @@ int main(int argc, char* argv[]){
         writeText(fout, len_text, cipher_text);
     } 
     else if (mode == 'D'){
-        
-        // Decrypting
+        // Decryption
         initialize_Reg();
         count = 8;
         index = 0;
         z_out = 0;
 
-        while (index<len_text){
-            plain_text[index] = text[index];          // preservo intatto il cipher_text (text[])
-            while(count>=1){
+        while (index < len_text){
+            plain_text[index] = text[index];          // preserve original cipher_text (text[])
+            while (count >= 1){
                 z_out = sequenceCiphering();
                 plain_text[index] = encryptionFunction(z_out, plain_text[index], --count);
                 newStateRegister();
@@ -224,7 +245,7 @@ int main(int argc, char* argv[]){
         writeText(fout, len_text, plain_text);
     }
 
-    // pulizia memoria
+    // Memory cleanup
     if (fout != stdout) fclose(fout);
     free(text);
     return 0;
