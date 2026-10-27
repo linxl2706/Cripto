@@ -10,24 +10,9 @@
 
 #include "utils.h"
 
-char convert(char c) {
-    unsigned char uc = (unsigned char)c;
-
-    // Using Latin-1 hex values to avoid multichar warnings and handle Spanish accents
-    if (uc == 0xE1 || uc == 0xC1) return 'a'; // á, Á
-    if (uc == 0xE9 || uc == 0xC9) return 'e'; // é, É
-    if (uc == 0xED || uc == 0xCD) return 'i'; // í, Í
-    if (uc == 0xF3 || uc == 0xD3) return 'o'; // ó, Ó
-    if (uc == 0xFA || uc == 0xFC || uc == 0xDA) return 'u'; // ú, ü, Ú
-    if (uc == 0xF1 || uc == 0xD1) return 'n'; // ñ, Ñ
-    
-    return c;
-}
-
 int char_to_number(int c) {
-    char ch = convert(c);
-    if (isupper(ch)) return c - 'A';
-    if (islower(ch)) return c - 'a';
+    if (isupper(c)) return c - 'A';
+    if (islower(c)) return c - 'a';
     return -1;
 }
 

@@ -13,7 +13,7 @@
 #include "utils.h"
 
 #define ALPHABET 26
-#define TK 100
+#define TK 4096
 
 typedef struct
 {
@@ -125,28 +125,35 @@ int main(int argc, char *argv[])
         esp.freq[0] += t_esp * t_esp;
     }
     k_ic = ic(l, let, len, esp, lf);
+
+    k_len = -1;
     for (i = 0; i < len; i++)
     {
-        k_len = kasiski(l, let, len, i);
-        if (k_len == k_ic)
+        int temp_k = kasiski(l, let, len, i);
+        if (temp_k > 1)
+        {
+            k_len = temp_k;
             break;
+        }
     }
-    if (k_ic < 1)
+
+    if (k_len <= 0)
     {
-        clear(let, k, lf);
-        return -1;
+        k_len = k_ic;
     }
-    k = (int *)malloc(k_ic * sizeof(int));
+    k = (int *)malloc(k_len * sizeof(int));
     if (!k)
     {
         clear(let, k, lf);
     }
 
-    calculo_k(l, let, len, k, k_ic, esp, lf);
-    for (i = 0, j = 0; i < len; i++, j++)
+    calculo_k(l, let, len, k, k_len, esp, lf);
+    for (i = 0, j = 0; i < len; i++, j = (j + 1) % k_len)
     {
-        ch = let[i] + k[j];
-        if (ch > 'z')
+        ch = let[i] - k[j];
+        while (ch < 'a')
+            ch += 26;
+        while (ch > 'z')
             ch -= 26;
         code[i] = ch;
     }
@@ -199,7 +206,7 @@ int kasiski(int l, char *let, int len, int i)
     if (d <= 2)
         return ret;
     ret = mcd(dis[0], dis[1]);
-    for (j = 2 ;j < d; j++)
+    for (j = 2; j < d; j++)
     {
         ret = mcd(ret, dis[j]);
     }
@@ -212,10 +219,11 @@ int ic(int l, char *let, int len, Lang lang_freq, Lang *lf)
     int i, j, k;
     double f;
     int find = 0;
-    double rel;
     int ch;
-    for (k = 1; k <= TK; k++)
+
+    for (k = 1; k < 64; k++)
     {
+        find = 1;
         for (j = 0; j < k; j++)
         {
             for (i = 0; i < ALPHABET; i++)
@@ -223,6 +231,9 @@ int ic(int l, char *let, int len, Lang lang_freq, Lang *lf)
                 lf->let_freq[j][i].let = 'a' + i;
                 lf->let_freq[j][i].times = 0;
             }
+
+            lf->tam[j] = 0;
+
             for (i = j; i < len; i += k)
             {
                 ch = char_to_number(let[i]);
@@ -240,17 +251,21 @@ int ic(int l, char *let, int len, Lang lang_freq, Lang *lf)
             lf->freq[j] = 0;
             for (i = 0; i < ALPHABET; i++)
             {
-                f = lf->let_freq[j][i].times / lf->tam[j];
-                lf->freq[j] += f * f;
+                if (lf->tam[j] > 0)
+                {
+                    f = (double)lf->let_freq[j][i].times / lf->tam[j];
+                    lf->freq[j] += f * f;
+                }
             }
         }
+
         for (j = 0; j < k; j++)
         {
-            rel = lf->freq[j] / lang_freq.freq[0];
-            if (rel > 0)
-                rel = -rel;
-            if (rel < 0.9)
-                find = 1;
+            if (lf->freq[j] < 0.06)
+            {
+                find = 0;
+                break;
+            }
         }
         if (find)
             break;
@@ -266,13 +281,18 @@ void calculo_k(int l, char *let, int len, int *k, int k_len, Lang lang, Lang *lf
     double total, best;
     for (i = 0; i < k_len; i++)
     {
+        best = -1;
         for (ki = 0; ki < ALPHABET; ki++)
         {
-            best = 0;
+
             total = 0;
-            for (j = 0; j + i * k_len < ALPHABET; j++)
+            for (j = 0; j < ALPHABET; j++)
             {
-                total += lang.let_freq[0][j].times * lf->let_freq[i][(j + ki) % ALPHABET].times / lf->tam[i];
+                if (lf->tam[i] > 0)
+                {
+                    total += (lang.let_freq[0][j].times / lang.tam[0]) *
+                             (lf->let_freq[i][(j + ki) % ALPHABET].times / lf->tam[i]);
+                }
             }
 
             if (!ki)
