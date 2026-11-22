@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
 
     int i, j, len_w, n[ALPHABET];
 
-    double prob_x[ALPHABET], prob_y[ALPHABET], prob_k[ALPHABET], prob_conj[ALPHABET][ALPHABET];
+    double prob_x[ALPHABET], prob_y[ALPHABET], prob_k[ALPHABET], prob_cond[ALPHABET][ALPHABET];
 
     for (i = 1; i < argc; i++)
     {
@@ -83,14 +83,30 @@ int main(int argc, char *argv[])
 
     let = (char *)malloc(TAM * sizeof(char));
 
-    while (fgets(let, TAM, entrada) != NULL)
+    if (entrada == stdin)
     {
-        for (i = 0; let[i] != '\0'; i++)
-        {
-            if (isalpha((unsigned char)let[i]))
+        if (fgets(let, TAM, entrada) != NULL)
+            for (i = 0; let[i] != '\0'; i++)
             {
-                n[toupper((unsigned char)let[i]) - 'A']++;
-                len_w++;
+                if (isalpha((unsigned char)let[i]))
+                {
+                    n[toupper((unsigned char)let[i]) - 'A']++;
+                    len_w++;
+                }
+            }
+    }
+
+    else
+    {
+        while (fgets(let, TAM, entrada) != NULL)
+        {
+            for (i = 0; let[i] != '\0'; i++)
+            {
+                if (isalpha((unsigned char)let[i]))
+                {
+                    n[toupper((unsigned char)let[i]) - 'A']++;
+                    len_w++;
+                }
             }
         }
     }
@@ -106,8 +122,8 @@ int main(int argc, char *argv[])
 
         for (j = 0; j < ALPHABET; j++)
         {
-            prob_conj[j][i] = prob_x[j] * prob_k[(i - j + ALPHABET) % ALPHABET]; /*P(X,Y)*/
-            prob_y[i] += prob_conj[j][i];
+            prob_cond[j][i] = prob_x[j] * prob_k[(i - j + ALPHABET) % ALPHABET]; /*P(X,Y)*/
+            prob_y[i] += prob_cond[j][i];
         }
     }
 
@@ -116,11 +132,11 @@ int main(int argc, char *argv[])
         for (j = 0; j < ALPHABET; j++)
         {
             if (prob_y[j] > 0)
-                prob_conj[i][j] /= prob_y[j]; /*  P(X,Y)/P(Y)  */
+                prob_cond[i][j] /= prob_y[j]; /*  P(X,Y)/P(Y)  */
             else
-                prob_conj[i][j] = 0;
+                prob_cond[i][j] = 0;
 
-            if (prob_y[j] > 0 && fabs(prob_conj[i][j] - prob_x[i]) > 0.00001)
+            if (prob_y[j] > 0 && fabs(prob_cond[i][j] - prob_x[i]) > 0.00001)
                 err++;
         }
     }
@@ -134,7 +150,7 @@ int main(int argc, char *argv[])
     {
         for (j = 0; j < ALPHABET; j++)
         {
-            fprintf(salida, "P(%c|%c) = %lf", i + 'A', j + 'A', prob_conj[i][j]);
+            fprintf(salida, "P(%c|%c) = %lf", i + 'A', j + 'A', prob_cond[i][j]);
         }
         fprintf(salida, "\n");
     }
