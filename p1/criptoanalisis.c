@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
         code[i] = ch;
     }
     code[i] = '\0';
-    fprintf(salida, "longitud de la clave: %d\n", k_ic);
+    fprintf(salida, "longitud de la clave: %d %d\n", k_ic, k_len);
     fprintf(salida, "clave: {");
     for (i = 0; i < k_ic; i++)
     {
