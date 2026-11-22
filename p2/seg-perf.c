@@ -94,16 +94,11 @@ int main(int argc, char *argv[])
             }
         }
     }
-    
-    
-
 
     for (i = 0; i < ALPHABET; i++)
     {
         prob_x[i] = (double)n[i] / len_w;
     }
-
-
 
     for (i = 0; i < ALPHABET; i++)
     {
@@ -141,7 +136,7 @@ int main(int argc, char *argv[])
         {
             fprintf(salida, "P(%c|%c) = %lf", i + 'A', j + 'A', prob_conj[i][j]);
         }
-        fprintf(salida,"\n");
+        fprintf(salida, "\n");
     }
 
     fprintf(salida, "Modo %s | Numero de fallos: %d/%d | Longitud del texto: %d\n", met ? "equiprobable" : "no equiprobable", err, ALPHABET * ALPHABET, len_w);
